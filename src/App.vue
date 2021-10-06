@@ -1,5 +1,41 @@
 <template>
   <div class="container">
+    <div
+      v-if="!coins"
+      class="
+        fixed
+        w-100
+        h-100
+        opacity-80
+        bg-purple-800
+        inset-0
+        z-50
+        flex
+        items-center
+        justify-center
+      "
+    >
+      <svg
+        class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
     <section>
       <div class="flex">
         <div class="max-w-xs">
@@ -10,6 +46,7 @@
             <input
               v-model="ticker"
               @keydown.enter="addTicket"
+              @input="filterCoints"
               type="text"
               name="wallet"
               id="wallet"
@@ -30,6 +67,9 @@
             class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
           >
             <span
+              v-for="(item, idx) in filtredCoints"
+              :key="idx"
+              @click="setTicker(item)"
               class="
                 inline-flex
                 items-center
@@ -43,58 +83,10 @@
                 cursor-pointer
               "
             >
-              BTC
-            </span>
-            <span
-              class="
-                inline-flex
-                items-center
-                px-2
-                m-1
-                rounded-md
-                text-xs
-                font-medium
-                bg-gray-300
-                text-gray-800
-                cursor-pointer
-              "
-            >
-              DOGE
-            </span>
-            <span
-              class="
-                inline-flex
-                items-center
-                px-2
-                m-1
-                rounded-md
-                text-xs
-                font-medium
-                bg-gray-300
-                text-gray-800
-                cursor-pointer
-              "
-            >
-              BCH
-            </span>
-            <span
-              class="
-                inline-flex
-                items-center
-                px-2
-                m-1
-                rounded-md
-                text-xs
-                font-medium
-                bg-gray-300
-                text-gray-800
-                cursor-pointer
-              "
-            >
-              CHD
+              {{ item }}
             </span>
           </div>
-          <div v-if="false" class="text-sm text-red-600">
+          <div v-if="showMessage" class="text-sm text-red-600">
             Такой тикер уже добавлен
           </div>
         </div>
@@ -255,16 +247,45 @@ export default {
       tickers: [],
       selectedTicker: null,
       graph: [],
+      coins: false,
+      filtredCoints: [],
+      showMessage: false,
     };
   },
   methods: {
+    setTicker(name) {
+      this.ticker = name;
+    },
+    filterCoints() {
+      this.showMessage = false;
+
+      this.filtredCoints = this.ticker
+        ? this.coins
+            .filter((item) => item.includes(this.ticker.toUpperCase()))
+            .sort((a, b) => a.length - b.length)
+            .slice(0, 4)
+        : [];
+    },
+
     addTicket() {
       const newTicker = {
         id: this.tickers.length + 1,
         name: this.ticker,
         price: "-",
       };
-      this.ticker.length && this.tickers.push(newTicker);
+
+      if (this.ticker.length) {
+        const haseTicker = this.tickers.filter(
+          (coint) => coint.name === this.ticker
+        );
+
+        if (haseTicker.length > 0) {
+          this.showMessage = true;
+          return;
+        }
+
+        this.tickers.push(newTicker);
+      }
 
       setInterval(async () => {
         const f = await fetch(
@@ -300,6 +321,14 @@ export default {
         (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
       );
     },
+  },
+
+  async mounted() {
+    const cointsData = await fetch(
+      `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`
+    );
+
+    this.coins = await cointsData.json().then((d) => Object.keys(d.Data));
   },
 };
 </script>
