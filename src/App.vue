@@ -134,8 +134,9 @@
       </button>
       <div class="filter">
         <h3>Фильтер:</h3>
+
         <div class="">
-          <input placeholder="Введите название" />
+          <input v-model="filter" placeholder="Введите название" />
         </div>
         <div class="">
           <button
@@ -199,7 +200,7 @@
       <hr class="w-full border-t border-gray-600 my-4" />
       <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div
-          v-for="item in tickers"
+          v-for="item in filtredTickers()"
           :key="item.id"
           @click="selectedItemTicker(item)"
           class="
@@ -312,9 +313,15 @@ export default {
       coins: false,
       filtredCoints: [],
       showMessage: false,
+      filter: "",
     };
   },
   methods: {
+    filtredTickers() {
+      return this.tickers.filter((ticker) =>
+        ticker.name.includes(this.filter.toUpperCase())
+      );
+    },
     tickerGetPrice(tickerName) {
       setInterval(async () => {
         const f = await fetch(
