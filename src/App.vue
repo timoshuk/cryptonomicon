@@ -132,6 +132,68 @@
         </svg>
         Добавить
       </button>
+      <div class="filter">
+        <h3>Фильтер:</h3>
+        <div class="">
+          <input placeholder="Введите название" />
+        </div>
+        <div class="">
+          <button
+            class="
+              my-4
+              inline-flex
+              items-center
+              py-2
+              px-4
+              mx-2
+              border border-transparent
+              shadow-sm
+              text-sm
+              leading-4
+              font-medium
+              rounded-full
+              text-white
+              bg-gray-600
+              hover:bg-gray-700
+              transition-colors
+              duration-300
+              focus:outline-none
+              focus:ring-2
+              focus:ring-offset-2
+              focus:ring-gray-500
+            "
+          >
+            Назад
+          </button>
+          <button
+            class="
+              my-4
+              inline-flex
+              items-center
+              py-2
+              px-4
+              mx-2
+              border border-transparent
+              shadow-sm
+              text-sm
+              leading-4
+              font-medium
+              rounded-full
+              text-white
+              bg-gray-600
+              hover:bg-gray-700
+              transition-colors
+              duration-300
+              focus:outline-none
+              focus:ring-2
+              focus:ring-offset-2
+              focus:ring-gray-500
+            "
+          >
+            Вперед
+          </button>
+        </div>
+      </div>
     </section>
     <template v-if="tickers.length">
       <hr class="w-full border-t border-gray-600 my-4" />
@@ -253,6 +315,23 @@ export default {
     };
   },
   methods: {
+    tickerGetPrice(tickerName) {
+      setInterval(async () => {
+        const f = await fetch(
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD`
+        );
+
+        const data = await f.json();
+
+        this.tickers.find((t) => t.name === tickerName).price =
+          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+
+        if (this.selectedTicker?.name === tickerName) {
+          this.graph.push(data.USD);
+        }
+      }, 5000);
+    },
+
     setTicker(name) {
       this.ticker = name;
     },
@@ -287,20 +366,10 @@ export default {
         this.tickers.push(newTicker);
       }
 
-      setInterval(async () => {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${newTicker.name}&tsyms=USD`
-        );
+      localStorage.setItem("tickers-list", JSON.stringify(this.tickers));
 
-        const data = await f.json();
-
-        this.tickers.find((t) => t.name === newTicker.name).price =
-          data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-
-        if (this.selectedTicker?.name === newTicker.name) {
-          this.graph.push(data.USD);
-        }
-      }, 5000);
+      //  interval Funktion add here
+      this.tickerGetPrice(newTicker.name);
 
       this.ticker = "";
     },
@@ -324,6 +393,13 @@ export default {
   },
 
   async mounted() {
+    const tickersList = localStorage.getItem("tickers-list");
+    this.tickers = tickersList ? JSON.parse(tickersList) : [];
+
+    this.tickers.forEach((ticker) => {
+      this.tickerGetPrice(ticker.name);
+    });
+
     const cointsData = await fetch(
       `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`
     );
